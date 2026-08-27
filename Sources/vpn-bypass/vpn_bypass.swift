@@ -1,7 +1,7 @@
 import Foundation
 import SystemConfiguration
 
-let TARGET_HOSTS = ["chatgpt.com", "auth.openai.com"]
+let TARGET_HOSTS = ["chatgpt.com", "auth.openai.com", "opencode.ai"]
 let DNS_SERVER = "1.1.1.1"
 
 func run(_ command: String, arguments: [String]) -> (Int32, String) {
