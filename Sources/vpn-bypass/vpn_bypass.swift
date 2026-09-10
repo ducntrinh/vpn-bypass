@@ -2,6 +2,24 @@ import Foundation
 import SystemConfiguration
 
 let TARGET_HOSTS = ["chatgpt.com", "auth.openai.com", "opencode.ai"]
+let TARGET_IPS: [String] = [
+    // Add direct IPs here, e.g.:
+    "173.245.48.0/20",
+    "103.21.244.0/22",
+    "103.22.200.0/22",
+    "103.31.4.0/22",
+    "141.101.64.0/18",
+    "108.162.192.0/18",
+    "190.93.240.0/20",
+    "188.114.96.0/20",
+    "197.234.240.0/22",
+    "198.41.128.0/17",
+    "162.158.0.0/15",
+    "104.16.0.0/13",
+    "104.24.0.0/14",
+    "172.64.0.0/13",
+    "131.0.72.0/22",
+]
 let DNS_SERVER = "1.1.1.1"
 
 func run(_ command: String, arguments: [String]) -> (Int32, String) {
@@ -54,6 +72,14 @@ func deleteRoute(ip: String) {
     }
 }
 
+func isValidIPv4(_ ip: String) -> Bool {
+    let parts = ip.split(separator: ".", omittingEmptySubsequences: false)
+    return parts.count == 4 && parts.allSatisfy { part in
+        guard let num = Int(part) else { return false }
+        return num >= 0 && num <= 255
+    }
+}
+
 func applyRoutes() {
     print("\nApplying bypass routes...")
     guard let gateway = getGateway() else {
@@ -62,11 +88,25 @@ func applyRoutes() {
     }
     print("  Gateway: \(gateway)")
 
+    // Route hostnames (DNS-resolved)
     for host in TARGET_HOSTS {
         let ips = resolveIPv4(host: host)
         print("  \(host) -> \(ips)")
         for ip in ips { deleteRoute(ip: ip) }
         for ip in ips { addRoute(ip: ip, via: gateway) }
+    }
+
+    // Route direct IPs (no DNS resolution)
+    if !TARGET_IPS.isEmpty {
+        print("  Direct IPs:")
+        for ip in TARGET_IPS {
+            guard isValidIPv4(ip) else {
+                print("  ! Skipping invalid IP: \(ip)")
+                continue
+            }
+            deleteRoute(ip: ip)
+            addRoute(ip: ip, via: gateway)
+        }
     }
 }
 
